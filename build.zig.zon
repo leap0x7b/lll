@@ -1,0 +1,11 @@
+.{
+    .name = "lll",
+    .version = "0.1.0",
+
+    .dependencies = .{
+        .nasm = .{
+            .url = "https://github.com/andrewrk/nasm/archive/d459449930bbaa70e74b2dca2880132ca6d4479a.tar.gz",
+            .hash = "12205aad3d97f1d4941041b696e8fe2d3886f28d925c902fa3e305ac378e87e9a526",
+        },
+    },
+}
