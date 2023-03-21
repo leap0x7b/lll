@@ -1,5 +1,5 @@
 # LLL (Lazy Linux Loader)
-A very simple Linux bootloader for legacy BIOS that boots only Linux.
+A very simple Linux bootloader for legacy BIOS that only boots Linux.
 
 Currently in a very very very very early stage, so not all features advertised are actually here until an alpha, beta, or final release.
 
