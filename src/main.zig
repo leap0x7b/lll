@@ -31,19 +31,24 @@ pub export fn main() void {
     console.init();
     console.putChar('L');
     e820.init() catch unreachable;
-    //std.log.info("{any}", .{disk.readSlice(0x80, u8, 128, 0, &heap.allocator)});
-    @panic("test");
+    //e9.print("{any}", .{disk.readSlice(0x80, u8, 128, 0, &heap.allocator)}) catch unreachable;
+    //@panic("test");
     //while (true) asm volatile ("hlt");
 }
 
 pub fn panicHex(code: usize) noreturn {
-    console.print("{x:0>4}", .{code}) catch unreachable;
-    dummyPanic("", null, null);
+    console.print("!{x:0>4}", .{code}) catch unreachable;
+    pressAnyKey();
 }
 
 fn dummyPanic(_: []const u8, _: ?*std.builtin.StackTrace, _: ?usize) noreturn {
+    console.putChar('!');
+    pressAnyKey();
+}
+
+fn pressAnyKey() noreturn {
     _ = real.int(0x16, .{});
     asm volatile ("ljmpw $0xffff, $0");
-    console.write("\nHow did you get here?");
+    console.write("\nhow did you get here?");
     unreachable;
 }

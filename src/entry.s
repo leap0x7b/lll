@@ -19,8 +19,8 @@ stage2_entry:
     sub ecx, bss_begin
     rep stosb
 
-    jmp main
-    call .halt
+    call main
+    jmp .halt
 
 .halt:
     hlt
