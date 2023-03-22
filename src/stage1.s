@@ -4,7 +4,7 @@ global _start
 extern stage2_begin
 extern stage2_sector_size
 extern stack_end
-extern main
+extern stage2_entry
 
 bits 16
 _start:
@@ -52,27 +52,25 @@ entry:
     mov ah, 0x0e
     int 0x10
 
+    call check_a20
+    jnz enable_a20
+
     call load_stage2
     call protected_mode_switch
 
     jmp $
 
 print:
-    pusha
+    mov ah, 0x0e
 
 .loop:
-    mov al, [bx]
-    cmp al, 0
-    je .done
-
-    mov ah, 0x0e
-    int 0x10
-
-    add bx, 1
-    jmp .loop
+	lodsb
+	cmp al, 0
+	je .done
+	int 0x10
+	jmp .loop
 
 .done:
-    popa
     ret
 
 print_hex:
@@ -105,7 +103,7 @@ print_hex:
     jmp .loop
 
 .done:
-    mov bx, HEX_OUT
+    mov si, HEX_OUT
     call print
 
     popa
@@ -126,6 +124,64 @@ error:
     xor ah, ah
     int 16h
     jmp 0xffff:0
+
+check_a20:
+    push es
+    xor ax, ax
+    dec ax
+    mov es, ax
+    mov ah, byte [es:0x510]
+    mov byte [ds:0x500], 0
+    mov byte [es:0x510], al
+    mov al, byte [ds:0x500]
+    mov byte [es:0x510], ah
+    pop es
+    or al, al
+    ret
+
+enable_a20:
+    ; BIOS method
+    mov ax, 0x2401 ; L is real
+    int 0x15
+    jz error
+    call check_a20
+    jnz error
+    ; Keyboard method
+    call .kbd_wait
+    mov al, 0xad
+    out 0x64, al
+    call .kbd_wait
+    mov al, 0xd0
+    out 0x64, al
+    call .kbd_wait2
+    in al, 0x60
+    push ax
+    call .kbd_wait
+    mov al, 0xd1
+    out 0x64, al
+    call .kbd_wait
+    pop ax
+    or al, 2
+    out 0x60, al
+    call .kbd_wait
+    mov al, 0xae
+    out 0x64, al
+    call .kbd_wait
+    call check_a20
+    jnz error
+    ret
+
+.kbd_wait:
+    in al, 0x64
+    test al, 2
+    jnz .kbd_wait
+    ret
+
+.kbd_wait2:
+    in al, 0x64
+    test al, 1
+    jz .kbd_wait2
+    ret
 
 load_stage2:
     mov bx, stage2_begin
@@ -202,21 +258,4 @@ protected_mode_switch:
     bts ax, 0
     mov cr0, eax
 
-    jmp 0x18:.init
-
-bits 32
-.init:
-    mov eax, 0x20
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    mov ss, ax
-    mov esp, stack_end
-
-    jmp main
-    call .halt
-
-.halt:
-    hlt
-    jmp $
+    jmp 0x18:stage2_entry

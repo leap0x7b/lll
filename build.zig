@@ -31,29 +31,20 @@ pub fn build(b: *std.Build) !void {
     exe.addOptions("build_options", exe_options);
     exe.setLinkerScriptPath(.{ .path = "src/linker.ld" });
 
-    const nasm_dep = b.dependency("nasm", .{
-        .optimize = .ReleaseFast,
-    });
+    const nasm_dep = b.dependency("nasm", .{ .optimize = .ReleaseSafe });
     const nasm_exe = nasm_dep.artifact("nasm");
 
     const nasm_sources = [_][]const u8{
-        "src/stage1.s",
+        "src/entry.s",
         "src/real.s",
+        "src/stage1.s",
     };
 
     for (nasm_sources) |input_file| {
         const output_basename = basenameNewExtension(b, input_file, ".o");
         const nasm_run = b.addRunArtifact(nasm_exe);
 
-        nasm_run.addArgs(&.{
-            "-f",
-            "elf32",
-            "-g",
-            "-F",
-            "dwarf",
-        });
-
-        nasm_run.addArgs(&.{"-o"});
+        nasm_run.addArgs(&.{ "-f", "elf32", "-g", "-F", "dwarf", "-o" });
         exe.addObjectFileSource(nasm_run.addOutputFileArg(output_basename));
 
         nasm_run.addFileSourceArg(.{ .path = input_file });
